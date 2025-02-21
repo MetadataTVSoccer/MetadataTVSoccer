@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>FÚTBOL DASH</title>
+
+    <!-- Importación de la librería Dash.js para la reproducción de video DASH -->
+    <script src="http://cdn.dashjs.org/latest/dash.all.min.js"></script>
+
+    <style>
+        /* Estilos para la cabecera */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        h1 {
+            margin-right: 10px;
+        }
+        
+        /* Contenedor del video y la imagen del radar */
+        .video-container {
+            display: flex; /* Permite que los elementos se alineen en fila */
+            align-items: center; /* Centra verticalmente los elementos */
+            margin-left: 2%;
+        }
+        
+        /* Configuración del tamaño del video */
+        video {
+            width: 60%;
+            height: auto;
+        }
+        
+        /* Estilos para el contenedor de información (contador y valores) */
+        .contador-y-valores {
+            background-color: white;
+            padding: 10px;
+            border: 1px solid #ccc;
+            position: absolute;
+            top: 25px;
+            right: 1000px; /* Ubicación en la parte derecha de la pantalla */
+        }
+        
+        /* Estilo para la imagen del radar */
+        img {
+            float: right;
+            margin-left: 40px;
+        }
+        
+        /* Estilo para el texto "Radar del balón" */
+        .texto-radar {
+            position: absolute;
+            top: 40px; /* Ajusta la posición vertical */
+            left: 975px; /* Ajusta la posición horizontal */
+            font-size: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <!-- Contenedor del título principal -->
+    <div class="header">
+        <h1>FÚTBOL DASH</h1>
+    </div>
+    
+    <!-- Contenedor que agrupa el video y la imagen del radar -->
+    <div class="video-container">
+        <!-- Reproductor de video DASH con el manifiesto de reproducción -->
+        <video data-dashjs-player src="admin/manifiesto.mpd" controls></video>
+        
+        <!-- Imagen dinámica que mostrará el radar del balón -->
+        <img id="imagenRadar" src="" alt="Descripción de la imagen" width="460" height="auto">
+    </div>
+    
+    <!-- Contenedor para mostrar información del video y posición -->
+    <div class="contador-y-valores" id="contadorYValores"></div>
+
+    <!-- Texto fijo que indica la funcionalidad del radar -->
+    <div class="texto-radar">Radar del balón</div>
+
+    <script>
+        // Selección del elemento de video en el DOM
+        const videoPlayer = document.querySelector('video[data-dashjs-player]');
+        // Contenedor donde se mostrarán los valores de tiempo y posición
+        const contadorYValores = document.getElementById('contadorYValores');
+        // Ruta del archivo de coordenadas que contiene las posiciones del balón
+        const archivoURL = 'radar/Coordenadas.txt';
+        // Elemento de imagen que se actualizará con el radar correspondiente
+        const imagenRadar = document.getElementById('imagenRadar');
+
+        async function mostrarValores() {
+            try {
+                // Cargar el archivo de coordenadas de forma asíncrona
+                const response = await fetch(archivoURL);
+                const contenido = await response.text();
+                const valores = contenido.split('\n'); // Separar por líneas
+
+                // Evento que se ejecuta cada vez que el video avanza en el tiempo
+                videoPlayer.addEventListener('timeupdate', () => {
+                    const tiempoActual = videoPlayer.currentTime; // Obtener el tiempo actual del video
+                    const indice = Math.floor(tiempoActual / 0.5); // Calcular el índice correspondiente
+
+                    if (valores[indice] !== undefined) {
+                        // Mostrar el tiempo y la posición en el contenedor de valores
+                        contadorYValores.textContent = `Tiempo: ${indice}\nPosición: ${valores[indice]}`;
+                        
+                        // Convertir el valor de la posición en un número para obtener la imagen correspondiente
+                        const numeroImagen = parseInt(valores[indice]);
+                        imagenRadar.src = `radar/${numeroImagen}.png`; // Actualizar la imagen del radar
+                    }
+                });
+            } catch (error) {
+                console.error('Error al cargar el archivo:', error);
+            }
+        }
+        
+        // Llamada a la función para cargar y mostrar valores
+        mostrarValores();
+    </script>
+</body>
+</html>
