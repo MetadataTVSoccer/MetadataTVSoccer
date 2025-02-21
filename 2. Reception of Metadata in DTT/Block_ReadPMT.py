@@ -2,61 +2,46 @@
 import numpy as np
 from gnuradio import gr
 
+class blk(gr.sync_block):  
+    """Bloque de Python Embebido - Lee la información de la tabla PMT y el descriptor de emergencia."""
 
-class blk(gr.sync_block):  # other base classes are basic_block, decim_block, interp_block
-    """Embedded Python Block - Reading the information from the PMT table and the emergency descriptor.
-    Extract the area codes into an Excel file.
-    Prints the type of service that contains the superimpose message.
-    It receives 188-byte frames that are processed. """
-
-    def __init__(self):  # only default arguments here
-        """arguments to this function show up as parameters in GRC"""
-        gr.sync_block.__init__(
+    def _init_(self):  
+        """Inicialización del bloque"""
+        gr.sync_block._init_(
             self,
-            name='Read_PMT',   # will show up in GRC
-            in_sig=[np.ubyte],
-            out_sig=[np.ubyte]
+            name='Read_PMT', 
+            in_sig=[np.ubyte],  
+            out_sig=[np.ubyte]  
         )
-        # if an attribute with the same name as a parameter is found,
-        # a callback is registered (properties work, too).
-        # self.example_param = example_param
 
-    # ---------- Funcion que convierte de Binario a Decimal ---------
+    # ---------- Función que convierte de Binario a Decimal ---------
     def binario_a_decimal(self, binario):
-        # binario = '11111111'
         bits = list(binario)
         valor = 0
 
         for i in range(len(bits)):
-            bit = bits.pop()
-
+            bit = bits.pop()  
             if bit == '1':
-                valor += pow(2, i)
+                valor += pow(2, i)  
         return valor
 
-    # --------- Funcion que convierte de Decimal a Binario -----------
+    # --------- Función que convierte de Decimal a Binario de 8 bits -----------
     def decimal_a_binario(self, decimal):
+        "
         if decimal <= 0:
             return "00000000"
-        # Aqui almacenamos el resultado
         binario = ""
-        # Mientras se pueda dividir...
         while decimal > 0:
-            # Saber si es 1 o 0
-            residuo = int(decimal % 2)
-            # E ir dividiendo el decimal
-            decimal = int(decimal / 2)
-            # Ir agregando el numero (1 o 0) a la izquierda del resultado
-            binario = str(residuo) + binario
+            residuo = int(decimal % 2)  
+            decimal = int(decimal / 2) 
+            binario = str(residuo) + binario  
 
-        binario = binario.zfill(8)
+        binario = binario.zfill(8)  
         return binario
 
-    # ---------- Funcion para determinar el Type Stream -----------
-
+    # ---------- Función para determinar el Tipo de Stream -----------
     def StreamType(self, ID_ts_d):
-        # mensaje_TS = ''
-
+        """Determina el tipo de stream basado en el ID"""
         if ID_ts_d == 0:
             mensaje_TS = 'No definido'
         elif ID_ts_d == 1:
@@ -68,7 +53,7 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
         elif ID_ts_d == 4:
             mensaje_TS = 'Audio Conforme ISO/EC 13818-3'
         elif ID_ts_d == 5:
-            mensaje_TS = 'Seccion'
+            mensaje_TS = 'Sección'
         elif ID_ts_d == 6:
             mensaje_TS = 'Paquetes PES'
         elif ID_ts_d == 7:
@@ -98,7 +83,7 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
         elif ID_ts_d == 19:
             mensaje_TS = 'Conforme ISO/IEC 14496-1 SL (flujo de paquetes o flujo de FlexMux transportado en la ISO/IEC 14496)'
         elif ID_ts_d == 20:
-            mensaje_TS = 'Protocolo de sincronizacion de descarga conforme ISO/IEC 13818-6'
+            mensaje_TS = 'Protocolo de sincronización de descarga conforme ISO/IEC 13818-6'
         elif ID_ts_d == 21:
             mensaje_TS = 'Metadata transportada por un paquete PES'
         elif ID_ts_d == 22:
@@ -126,27 +111,25 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
 
         return mensaje_TS
 
-
     def work(self, input_items, output_items):
-        """Reading the PMT table"""
-        output_items[0][:] = input_items[0]
+        
+        output_items[0][:] = input_items[0]  
 
-	pid11 = self.decimal_a_binario(input_items[0][1])
+        # Extracción de PID de los bytes 1 y 2
+        pid11 = self.decimal_a_binario(input_items[0][1])
         pid22 = self.decimal_a_binario(input_items[0][2])
-        pid0 = pid11 + pid22
-        pid_b131 = pid0[3:len(pid0)]
-        pid_d131 = self.binario_a_decimal(pid_b131)
+        pid0 = pid11 + pid22  
+        pid_b131 = pid0[3:len(pid0)]  
+        pid_d131 = self.binario_a_decimal(pid_b131)  
 
-
-	# Identifico tabla PMT
+        # Verifica si la tabla es PMT
         if input_items[0][5] == 2 and input_items[0][4] == 0:
-            #output_items[0] = input_items[0]
-            #print(output_items[0])
             print "\n"
             print "--------------------------------------------------------------------"
             print('PMT PARA SERVICIO DE CAP')
-  	    print "--------------------------------------------------------------------"
-	  
+            print "--------------------------------------------------------------------"
+
+            # Re-extrae y muestra el PID
             pid1 = self.decimal_a_binario(input_items[0][1])
             pid2 = self.decimal_a_binario(input_items[0][2])
             pid = pid1 + pid2
@@ -154,118 +137,33 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
             pid_d13 = self.binario_a_decimal(pid_b13)
             print "PID:", pid_d13, "y en hex:", hex(pid_d13)
 
-            # --- Section Length ---
+            # Extrae la longitud de la sección
             section_len1 = self.decimal_a_binario(input_items[0][6])
             section_len2 = self.decimal_a_binario(input_items[0][7])
-            section_length = section_len1 + section_len2
-            section_length_12b = section_length[4:len(section_length)]
+            section_length = section_len1 + section_len2 
+            section_length_12b = section_length[4:len(section_length)]  
             section_length_12d = self.binario_a_decimal(section_length_12b)
-            print "Section length:", section_length_12d, "y en hex:", hex(section_length_12d)
+            print "Longitud de la sección:", section_length_12d, "y en hex:", hex(section_length_12d)
 
-            # --- Section syntax indicator ---
+            
             section_sid = section_length[0]
-            print "Section syntax error:", section_sid, "entonces", section_sid == '1'
+            print "Error de sintaxis de sección:", section_sid, "entonces", section_sid == '1'
 
-            # --- Trama PMT ---
+            # Extrae los datos de la PMT 
             longitud = section_length_12d
             trama_pmt = input_items[0][5:longitud + 8]
-            # print(len(trama_pmt))
 
-            # --- CRC-32 ---
+            # Extrae y muestra el CRC-32 (últimos 4 bytes)
             tam_trama_pmt = len(trama_pmt)
             CRC_32_list = trama_pmt[-4:tam_trama_pmt]
             print "CRC-32:", CRC_32_list
 
-            # --- Broadcasting program number identifier ---
+            # Extrae el número de programa
             program_num1 = self.decimal_a_binario(trama_pmt[3])
             program_num2 = self.decimal_a_binario(trama_pmt[4])
             program_number = program_num1 + program_num2
             program_number_d = self.binario_a_decimal(program_number)
-            print "Program number:", program_number_d, "y en hex:", hex(program_number_d)
+            print "Número de programa:", program_number_d, "y en hex:", hex(program_number_d)
 
-            # --- Version Number ---
+            # Extrae el número de versión
             byte5 = trama_pmt[5]
-            byte5_b = self.decimal_a_binario(byte5)
-            version_number_b = byte5_b[2:7]
-            version_number_d = self.binario_a_decimal(version_number_b)
-            print "Version Number:", version_number_d, "y en hex:", hex(version_number_d)
-
-            # --- Current next indicator ---
-            current_nid = byte5_b[-1]
-            print "Current next indicator: ", current_nid, "entonces", current_nid == '1'
-
-
-            # --- PCR PID ---
-            pcr_pid1 = self.decimal_a_binario(input_items[0][13])
-            pcr_pid2 = self.decimal_a_binario(input_items[0][14])
-            PCR_PID_b = pcr_pid1 + pcr_pid2
-            PCR_PID_13b = PCR_PID_b[3:len(PCR_PID_b)]
-            PCR_PID_13d = self.binario_a_decimal(PCR_PID_13b)
-            print "PCR_PID:", PCR_PID_13d, "y en hex:", hex(PCR_PID_13d)
-
-            # --- Program information length ---
-            prog_len1 = self.decimal_a_binario(input_items[0][15])
-            prog_len2 = self.decimal_a_binario(input_items[0][16])
-            prog_len_b = prog_len1 + prog_len2
-            prog_len_b12 = prog_len_b[4:len(prog_len_b)]
-            prog_len_d12 = self.binario_a_decimal(prog_len_b12)
-            print "Program information length:", prog_len_d12, "y en hex:", hex(prog_len_d12)
-            print "--------------------------------------------------------------------"
-
-            prog_comparacion = '000000000000'
-            # prog_ewbs = '1111111001000'
-            descriptor_ewbs = input_items[0][17]
-            # print "DESCRIPTOR EWBS", descriptor_ewbs
-            if prog_len_b12 == prog_comparacion:
-                # --- Repeat loop ----
-                v_loop = input_items[0][17:len(trama_pmt) + 1]  # lista de repeticion
-                # v_loop = trama_pmt[12:-4]  # lista de repeticion (Modificamos)
-                # print v_loop
-                tam_loop = len(v_loop)
-                v_loop_bin = ''  # String loop
-
-                # Se concatena en un solo String
-                for i in range(tam_loop):
-                    v_loop_bin = v_loop_bin + self.decimal_a_binario(v_loop[i])
-
-                tam_vloop = len(v_loop_bin)  # Tamanio del v_loop_bin
-
-                i = 0  # variable iteradora
-                ID_TS_d = []
-                ES_PID_d = []
-                inf_len_ESdv = []
-                j = 1  # Variable de information
-
-                while i != tam_vloop:
-                    ID_TS = v_loop_bin[i + 0:i + 8]
-                    ID_TS_d.append(self.binario_a_decimal(ID_TS))
-                    ID_TS_dec = self.binario_a_decimal(ID_TS)
-                    print " --------------------- Information", j, "----------------------"
-                    print "Stream Type identifier:", ID_TS_dec, "en hex:", hex(ID_TS_dec), ":", self.StreamType(
-                        ID_TS_dec)
-
-                    ES_PID = v_loop_bin[i + 11:i + 24]
-                    ES_PID_d.append(self.binario_a_decimal(ES_PID))
-                    ES_PID_dec = self.binario_a_decimal(ES_PID)
-                    print "Elementary Stream PID:", ES_PID_dec, "en hex", hex(ES_PID_dec)
-
-                    inf_len_ES = v_loop_bin[i + 28:i + 40]
-                    inf_len_ESdv.append(self.binario_a_decimal(inf_len_ES))
-                    inf_len_ESd = self.binario_a_decimal(inf_len_ES)
-                    print "ES information length:", inf_len_ESd, "en hex:", hex(inf_len_ESd)
-
-                    cont = (i + 40) + (inf_len_ESd * 8)
-                    i = cont
-                    j += 1
-                    print "----------------------------------------------------------------"
-
-                print "Stream type identifier:", ID_TS_d
-                print "Elementary Stream PID:", ES_PID_d
-                print "ES information length:", inf_len_ESdv
-
-            
-            else:
-                 print "\n"
-
-        return len(output_items[0])
-        # return 0
