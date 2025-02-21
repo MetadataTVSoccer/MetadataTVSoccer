@@ -1,7 +1,11 @@
-********* Recepción Metadatos Videostreaming MPEG-DASH ***********
+********** MPEG-DASH Video Streaming Metadata Reception ***********
 
-Se encuentran dos archivos:
+There are two files:
 
-- admin.html: Por medio de este código se desarrolló la pagina web donde se reproduce el contenido multimedia (partido de futbol), el mismo que se encuentra sincronizado con el radar para determinar la posición del balón dentro del campo cada 0.5 segundos.
+- admin.html:
 
-- Receptor_Mpeg_Dash.py: Por medio de este código se desarrollo la interfaz para seleccionar el Transport Stream que se desea reproducir. Dentro del mismo se realiza el proceso de demultiplexación, decodificación, adaptación del video al estándar MPEG-DASH y finalmente subir los archivos necesarios al servidor web local creado.
+This code was used to develop the web page where the multimedia content (football match) is played, which is synchronized with the radar to determine the position of the ball within the field every 0.5 seconds.
+
+- Mpeg-Dash_Receiver.py:
+
+This code is used to develop the interface to select the Transport Stream to be played. Within it, the process of demultiplexing, decoding, adaptation of the video to the MPEG-DASH standard is carried out and finally the necessary files are uploaded to the local web server created.

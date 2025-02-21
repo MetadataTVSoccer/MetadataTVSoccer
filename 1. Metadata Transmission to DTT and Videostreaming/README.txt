@@ -1,19 +1,19 @@
-------------------------------- DESCRIPCIÓN DEL PROYECTO --------------------------------
+------------------------------- PROJECT DESCRIPTION --------------------------------
 
-Este repositorio contiene el código fuente de mi tesis, cuyo objetivo es mejorar la accesibilidad en la 
-transmisión de eventos deportivos para personas con discapacidad visual. Para ello, se ha desarrollado un 
-sistema que multiplexa metadatos en un flujo de transporte (TS) junto con audio y video, permitiendo la 
-sincronización en tiempo real de la posición del balón con un dispositivo háptico.
+This repository contains the source code for my thesis, which aims to improve accessibility in the
+transmission of sporting events for visually impaired people. To do this, a system has been developed that
+multiplexes metadata into a transport stream (TS) along with audio and video, allowing
+real-time synchronization of the ball's position with a haptic device.
 
-1. Generación del Stream de Transporte (TS)
+1. Generation of the Transport Stream (TS)
 
-	-Se toma un archivo de video y audio.
-	-Se genera un archivo de metadatos con las coordenadas del balón en el campo, muestreadas cada 0.5 segundos.
-	-Se multiplexan los metadatos con el video y audio en un solo flujo de transporte.
+-A video and audio file is taken.
+-A metadata file is generated with the coordinates of the ball on the field, sampled every 0.5 seconds.
+-The metadata is multiplexed with the video and audio into a single transport stream.
 
-2. Estructura del Paquete de Metadatos
+2. Structure of the Metadata Packet
 
-	Byte 1: Byte de sincronización.
-	Byte 2-3: Identificador de paquete (PID).
-	Byte 4: Byte de continuidad.
-	Byte 5: Coordenada del balón.
+Byte 1: Synchronization byte.
+Byte 2-3: Packet identifier (PID).
+Byte 4: Continuity byte.
+Byte 5: Ball coordinate.
